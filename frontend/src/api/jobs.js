@@ -1,26 +1,36 @@
-const API_URL = import.meta.env.VITE_API_URL;
+const BASE = import.meta.env.VITE_API_URL;
 
-export async function fetchJobs() {
-  const res = await fetch(`${API_URL}/jobs`);
-  if (!res.ok) throw new Error('Failed to fetch jobs');
-  return res.json();
+async function request(path, options = {}) {
+  const res = await fetch(`${BASE}${path}`, {
+    headers: { 'Content-Type': 'application/json', ...options.headers },
+    ...options,
+  });
+  if (res.status === 204) return null;
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
 }
 
-export async function fetchJobById(id) {
-  const res = await fetch(`${API_URL}/jobs/${id}`);
-  if (res.status === 404) throw new Error('Job not found');
-  if (!res.ok) throw new Error('Failed to fetch job');
-  return res.json();
-}
+export const fetchJobs = () => request('/jobs');
 
-export async function createJob(data) {
-  const res = await fetch(`${API_URL}/jobs`, {
+export const fetchJobById = (id) => request(`/jobs/${id}`);
+
+export const createJob = (data, token) =>
+  request('/jobs', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { Authorization: `Bearer ${token}` },
     body: JSON.stringify(data),
   });
 
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.error || 'Failed to create job');
-  return body;
-}
+export const updateJob = (id, data, token) =>
+  request(`/jobs/${id}`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+
+export const deleteJob = (id, token) =>
+  request(`/jobs/${id}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
